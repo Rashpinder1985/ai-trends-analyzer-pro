@@ -112,7 +112,7 @@ class Settings(BaseSettings):
 
     # Security
     cors_origins: List[str] = Field(
-        default=["*"],
+        default=[""https://rashpinder1985.github.io""],
         description="CORS allowed origins"
     )
     max_request_size: int = Field(default=10 * 1024 * 1024, description="Max request size")
