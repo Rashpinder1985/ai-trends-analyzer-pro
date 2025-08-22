@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trends Analyzer Pro - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        .chart-canvas {
+            width: 100% !important;
+            height: 400px !important;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #c33;
+        }
+
+        .success {
+            background: #efe;
+            color: #363;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #363;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 AI Trends Analyzer Pro</h1>
+        <p>Interactive Dashboard for Indian AI Market Analysis</p>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <h3 style="color: #667eea; margin-bottom: 20px;">Analysis Configuration</h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sampleSize">Sample Size</label>
+                    <input type="number" id="sampleSize" value="1000" min="100" max="10000">
+                </div>
+                <div class="form-group">
+                    <label for="startYear">Start Year</label>
+                    <input type="number" id="startYear" value="2019" min="2015" max="2023">
+                </div>
+                <div class="form-group">
+                    <label for="endYear">End Year</label>
+                    <input type="number" id="endYear" value="2024" min="2020" max="2024">
+                </div>
+                <div class="form-group">
+                    <label for="predictionYears">Prediction Years</label>
+                    <input type="number" id="predictionYears" value="6" min="1" max="10">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <button class="btn" onclick="loadHistoricalData()">📊 Load Historical Data</button>
+                <button class="btn" onclick="loadPredictions()">🔮 Generate Predictions</button>
+                <button class="btn" onclick="generateReport()">📋 Full Analysis Report</button>
+                <button class="btn" onclick="loadStats()">📈 System Stats</button>
+            </div>
+            
+            <!-- CSV Upload Section -->
+            <div class="form-row" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e1e5e9;">
+                <div class="form-group">
+                    <label for="csvFile">📁 Select CSV File</label>
+                    <input type="file" id="csvFile" accept=".csv" style="padding: 8px; border: 2px dashed #667eea;" onchange="handleFileSelection()">
+                    <small style="color: #666; font-size: 12px;">Select AI/tech job data from Kaggle or other sources</small>
+                    <div id="fileStatus" style="margin-top: 5px; font-size: 13px; color: #667eea;"></div>
+                </div>
+                <div class="form-group" style="display: flex; align-items: end;">
+                    <button class="btn" onclick="uploadAndAnalyzeCSV()" id="analyzeBtn" disabled style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🚀 Analyze CSV Data</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Analyzing AI trends data...</p>
+        </div>
+
+        <div id="errorContainer"></div>
+        <div id="successContainer"></div>
+
+        <div class="stats-grid" id="statsGrid" style="display: none;">
+            <!-- Stats cards will be populated here -->
+        </div>
+
+        <div class="dashboard-grid" id="chartsContainer">
+            <!-- Charts will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        let currentData = null;
+
+        function showLoading(show = true) {
+            document.getElementById('loadingIndicator').classList.toggle('show', show);
+        }
+
+        function showError(message) {
+            const container = document.getElementById('errorContainer');
+            container.innerHTML = `<div class="error">❌ Error: ${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 5000);
+        }
+
+        function showSuccess(message) {
+            const container = document.getElementById('successContainer');
+            container.innerHTML = `<div class="success">✅ ${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 3000);
+        }
+
+        function getFormData() {
+            return {
+                sample_size: parseInt(document.getElementById('sampleSize').value),
+                start_year: parseInt(document.getElementById('startYear').value),
+                end_year: parseInt(document.getElementById('endYear').value),
+                prediction_years: parseInt(document.getElementById('predictionYears').value)
+            };
+        }
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+
+        async function loadHistoricalData() {
+            showLoading(true);
+            try {
+                const params = getFormData();
+                const data = await apiCall(`/historical-data?sample_size=${params.sample_size}&start_year=${params.start_year}&end_year=${params.end_year}`);
+                
+                currentData = data;
+                showSuccess(`Loaded ${data.length} historical records`);
+                visualizeHistoricalData(data);
+                
+            } catch (error) {
+                showError(`Failed to load historical data: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function loadPredictions() {
+            showLoading(true);
+            try {
+                const params = getFormData();
+                const data = await apiCall(`/predictions?sample_size=${params.sample_size}&start_year=${params.start_year}&end_year=${params.end_year}&prediction_years=${params.prediction_years}`);
+                
+                showSuccess(`Generated ${data.length} predictions`);
+                visualizePredictions(data);
+                
+            } catch (error) {
+                showError(`Failed to generate predictions: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function generateReport() {
+            showLoading(true);
+            try {
+                const params = getFormData();
+                const data = await apiCall(`/report?sample_size=${params.sample_size}&start_year=${params.start_year}&end_year=${params.end_year}&prediction_years=${params.prediction_years}`);
+                
+                showSuccess(`Generated comprehensive report with ${data.total_records} records`);
+                visualizeComprehensiveReport(data);
+                
+            } catch (error) {
+                showError(`Failed to generate report: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const health = await apiCall('/health');
+                const metrics = await apiCall('/metrics');
+                const states = await apiCall('/states');
+                const skills = await apiCall('/skills');
+
+                displaySystemStats({ health, metrics, states, skills });
+                showSuccess('System statistics loaded successfully');
+                
+            } catch (error) {
+                showError(`Failed to load system stats: ${error.message}`);
+            }
+        }
+
+        function displaySystemStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.style.display = 'grid';
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.health.active_requests}</div>
+                    <div class="stat-label">Active Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.states.count}</div>
+                    <div class="stat-label">Supported States</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.skills.count}</div>
+                    <div class="stat-label">AI Skills Tracked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.health.status === 'healthy' ? '✅' : '❌'}</div>
+                    <div class="stat-label">System Health</div>
+                </div>
+            `;
+        }
+
+        function visualizeHistoricalData(data) {
+            if (!data || data.length === 0) return;
+
+            const container = document.getElementById('chartsContainer');
+            
+            // Skills distribution
+            const skillsCount = {};
+            data.forEach(record => {
+                skillsCount[record.skill_category] = (skillsCount[record.skill_category] || 0) + 1;
+            });
+
+            // States distribution
+            const statesCount = {};
+            data.forEach(record => {
+                statesCount[record.indian_state] = (statesCount[record.indian_state] || 0) + 1;
+            });
+
+            // Salary trends by year
+            const salaryByYear = {};
+            data.forEach(record => {
+                if (!salaryByYear[record.year]) {
+                    salaryByYear[record.year] = [];
+                }
+                salaryByYear[record.year].push(record.avg_salary_inr);
+            });
+
+            const avgSalaryByYear = {};
+            Object.keys(salaryByYear).forEach(year => {
+                avgSalaryByYear[year] = salaryByYear[year].reduce((a, b) => a + b, 0) / salaryByYear[year].length;
+            });
+
+            container.innerHTML = `
+                <div class="chart-container">
+                    <h3>📊 Top AI Skills Distribution</h3>
+                    <canvas id="skillsChart" class="chart-canvas"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>🌍 States Distribution</h3>
+                    <canvas id="statesChart" class="chart-canvas"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>💰 Average Salary Trends by Year</h3>
+                    <canvas id="salaryChart" class="chart-canvas"></canvas>
+                </div>
+            `;
+
+            // Skills chart
+            const topSkills = Object.entries(skillsCount)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+
+            new Chart(document.getElementById('skillsChart'), {
+                type: 'bar',
+                data: {
+                    labels: topSkills.map(([skill]) => skill),
+                    datasets: [{
+                        label: 'Frequency',
+                        data: topSkills.map(([, count]) => count),
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // States chart
+            new Chart(document.getElementById('statesChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statesCount),
+                    datasets: [{
+                        data: Object.values(statesCount),
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+                            '#ffecd2', '#fcb69f'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Salary trends chart
+            new Chart(document.getElementById('salaryChart'), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(avgSalaryByYear).sort(),
+                    datasets: [{
+                        label: 'Average Salary (₹)',
+                        data: Object.keys(avgSalaryByYear).sort().map(year => avgSalaryByYear[year]),
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + (value/100000).toFixed(1) + 'L';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function visualizePredictions(data) {
+            if (!data || data.length === 0) return;
+
+            const container = document.getElementById('chartsContainer');
+            container.innerHTML += `
+                <div class="chart-container">
+                    <h3>🔮 Future Salary Predictions</h3>
+                    <canvas id="predictionsChart" class="chart-canvas"></canvas>
+                </div>
+            `;
+
+            const predictionsByYear = {};
+            data.forEach(record => {
+                if (!predictionsByYear[record.year]) {
+                    predictionsByYear[record.year] = [];
+                }
+                predictionsByYear[record.year].push(record.avg_salary_inr);
+            });
+
+            const avgPredictionsByYear = {};
+            Object.keys(predictionsByYear).forEach(year => {
+                avgPredictionsByYear[year] = predictionsByYear[year].reduce((a, b) => a + b, 0) / predictionsByYear[year].length;
+            });
+
+            new Chart(document.getElementById('predictionsChart'), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(avgPredictionsByYear).sort(),
+                    datasets: [{
+                        label: 'Predicted Average Salary (₹)',
+                        data: Object.keys(avgPredictionsByYear).sort().map(year => avgPredictionsByYear[year]),
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + (value/100000).toFixed(1) + 'L';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function visualizeComprehensiveReport(report) {
+            const container = document.getElementById('chartsContainer');
+            
+            // Display key insights
+            container.innerHTML = `
+                <div class="chart-container" style="grid-column: 1 / -1;">
+                    <h3>📋 Comprehensive Analysis Report</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                        <div class="stat-card">
+                            <div class="stat-value">${report.total_records}</div>
+                            <div class="stat-label">Total Records</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${report.market_overview.historical_period.total_records}</div>
+                            <div class="stat-label">Historical Records</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${report.market_overview.prediction_statistics.prediction_years}</div>
+                            <div class="stat-label">Prediction Years</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${report.confidence_level.toFixed(2)}</div>
+                            <div class="stat-label">Confidence Level</div>
+                        </div>
+                    </div>
+                    
+                    <h4 style="color: #667eea; margin: 20px 0 10px 0;">📈 Key Insights:</h4>
+                    <ul style="text-align: left; padding-left: 20px;">
+                        ${report.key_insights.map(insight => `<li style="margin: 8px 0; color: #555;">${insight}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test API connection first
+            testApiConnection();
+        });
+
+        async function testApiConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    showSuccess('API connection successful! You can now use the dashboard.');
+                    loadStats();
+                } else {
+                    showError(`API responded with status ${response.status}. Make sure the API is running on port 8001.`);
+                }
+            } catch (error) {
+                showError('Cannot connect to API. Make sure it\'s running: python -m uvicorn ai_trends.api.main:app --host 127.0.0.1 --port 8001');
+            }
+        }
+
+        // Handle file selection
+        function handleFileSelection() {
+            const fileInput = document.getElementById('csvFile');
+            const fileStatus = document.getElementById('fileStatus');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            if (fileInput.files[0]) {
+                const file = fileInput.files[0];
+                if (file.name.endsWith('.csv')) {
+                    fileStatus.innerHTML = `✅ Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) - Ready to analyze`;
+                    fileStatus.style.color = '#28a745';
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.style.opacity = '1';
+                } else {
+                    fileStatus.innerHTML = '❌ Please select a CSV file';
+                    fileStatus.style.color = '#dc3545';
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.style.opacity = '0.5';
+                }
+            } else {
+                fileStatus.innerHTML = '';
+                analyzeBtn.disabled = true;
+                analyzeBtn.style.opacity = '0.5';
+            }
+        }
+
+        // Upload and analyze CSV file in one step
+        async function uploadAndAnalyzeCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showError('Please select a CSV file first');
+                return;
+            }
+            
+            if (!file.name.endsWith('.csv')) {
+                showError('Please select a valid CSV file');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                showSuccess(`Uploading and analyzing ${file.name}...`);
+                
+                const response = await fetch(`${API_BASE}/upload-csv`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Upload failed');
+                }
+                
+                const result = await response.json();
+                
+                showSuccess(`Successfully processed ${result.file_info.processed_rows} records from ${result.file_info.filename}`);
+                
+                // Display file info
+                const fileInfo = `
+                    <div style="background: #f8f9ff; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #667eea;">
+                        <h4 style="margin: 0 0 10px 0; color: #667eea;">📊 CSV Analysis Results</h4>
+                        <p><strong>File:</strong> ${result.file_info.filename}</p>
+                        <p><strong>Original Rows:</strong> ${result.file_info.original_rows.toLocaleString()}</p>
+                        <p><strong>Processed Rows:</strong> ${result.file_info.processed_rows.toLocaleString()}</p>
+                        <p><strong>Analyzed Sample:</strong> ${result.file_info.sampled_rows.toLocaleString()}</p>
+                        <p><strong>Detected Columns:</strong> ${result.file_info.columns.slice(0, 10).join(', ')}${result.file_info.columns.length > 10 ? '...' : ''}</p>
+                        <p><strong>Mapped Fields:</strong> ${Object.keys(result.file_info.found_mappings).join(', ')}</p>
+                        <p><strong>Status:</strong> ${result.message}</p>
+                    </div>
+                `;
+                
+                // Clear previous charts and show file info
+                document.getElementById('chartsContainer').innerHTML = fileInfo;
+                
+                // Generate visualizations if analysis data is available
+                if (result.analysis && result.analysis.historical_data) {
+                    currentData = result.analysis.historical_data;
+                    visualizeHistoricalData(currentData);
+                    showSuccess(`CSV analysis complete! Generated insights from ${currentData.length} records.`);
+                } else {
+                    showSuccess('CSV uploaded successfully. File processed and ready for further analysis.');
+                }
+                
+            } catch (error) {
+                showError(`CSV processing failed: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
